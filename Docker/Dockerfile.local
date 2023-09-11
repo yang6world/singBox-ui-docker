@@ -1,0 +1,15 @@
+FROM node:18-alpine
+ARG cpu=amd64
+LABEL maintainer="nekohasekai <contact-git@sekai.icu>"
+ENV TZ=Asia/Shanghai
+ENV IP_ADDRESS=localhost
+WORKDIR /singBox
+RUN set -ex \
+    && apk upgrade \
+    && apk add --no-cache procps bash tzdata ca-certificates \
+    && rm -rf /var/cache/apk/* 
+COPY ./ /singBox
+RUN cp /singBox/bin/${cpu}/singBox /singBox/singBox \
+    && chmod +x /singBox/singBox \
+    && rm -rf /singBox/bin
+cmd ["node", "bundle"]

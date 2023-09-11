@@ -1,0 +1,12 @@
+[Unit]
+Description=My Node.js Application
+
+[Service]
+ExecStart=/usr/bin/node /root/config/singBox/bundle
+WorkingDirectory=/root/config/singBox
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
