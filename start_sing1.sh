@@ -2,6 +2,9 @@
 imageName="singbox"
 install_dir="/root/config"
 #检查路径是否正确
+dir_avail(){
+		df $2 $1 |awk '{ for(i=1;i<=NF;i++){ if(NR==1){ arr[i]=$i; }else{ arr[i]=arr[i]" "$i; } } } END{ for(i=1;i<=NF;i++){ print arr[i]; } }' |grep -E 'Ava|可用' |awk '{print $2}'
+	}
 function check_dir(){
     if [[ ! "$install_dir" =~ ^[0-9a-zA-Z/_]+$ ]]; then
         echo -e "\033[31m 你的输入不符合规范，请重新输入 \033[0m"
@@ -13,11 +16,11 @@ function check_dir(){
     if [ ! -d "$install_dir" ]; then
         echo "目录不存在"
         echo "创建目录"
-        mkdir -p $install_dir/singBox
+        mkdir -p $install_dir
         echo "目录创建成功"
     else
         echo "目录存在"
-    fi
+fi
     #检查目录是否有写入权限
     if [ ! -w "$install_dir" ]; then
         echo -e "\033[31m 你的目录没有写入权限，请重新输入 \033[0m"
@@ -39,15 +42,6 @@ function start_config(){
 function install_docker(){
     echo "开始安装docker"
     curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
-    #选择是否从源码编译singbox输入y则从源码编译
-    read -p "是否从源码编译singbox（y/n）：" build_singbox
-    if [[ "$build_singbox" =~ ^[Yy]$ ]]; then
-        echo "你选择从源码编译singbox"
-        cp ./Docker/Dockerfile.net ./Dockerfile
-        elif
-        echo "你选择从本地安装singbox"
-        cp ./Docker/Dockerfile.local ./Dockerfile
-    fi
     read -p "请选择你要安装的设备是有显示器请输入（y/n）：" screen_exist
     if [[ "$screen_exist" =~ ^[Yy]$ ]]; then
         echo "开始安装..."
@@ -121,13 +115,20 @@ function install_system(){
         echo "暂不支持你的发行版"
         exit 1
     fi
-    #判断系统是否有systemctl
+    #判断系统进程管理器是systemctl还是service还是init
     if [ -f /bin/systemctl ]; then
-        echo "你的系统支持systemctl"
-        install_systemd
+        echo "你的系统进程管理器为systemctl"
+        systemctl start singbox
+    elif [ -f /usr/sbin/service ]; then
+        echo "你的系统进程管理器为service"
+        service singbox start
+    elif [ -f /sbin/init ]; then
+        echo "你的系统进程管理器为init"
+        initctl start singbox
     else
-        echo "你的系统不支持systemctl"
-        install_systemv
+        echo "你的系统进程管理器为其他"
+        echo "暂不支持你的系统进程管理器"
+        exit 1
     fi
     echo "开始安装..."
     echo "将把singbox安装到系统中"
@@ -195,7 +196,6 @@ read choice
 case "$choice" in
 1)
   echo "您选择了使用Docker安装功能"
-  cp -r ./ $install_dir/singBox
   install_docker
   ;;
 2)
