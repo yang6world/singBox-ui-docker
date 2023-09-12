@@ -1,7 +1,8 @@
 [Unit]
-Description=My Node.js Application
+Description=singBox
 
 [Service]
+Environment="ip="
 ExecStart=/usr/bin/node /root/config/singBox/bundle
 WorkingDirectory=/root/config/singBox
 Restart=always

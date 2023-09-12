@@ -18,6 +18,7 @@ function check_dir(){
     else
         echo "目录存在"
     fi
+    
     #检查目录是否有写入权限
     if [ ! -w "$install_dir" ]; then
         echo -e "\033[31m 你的目录没有写入权限，请重新输入 \033[0m"
@@ -26,8 +27,6 @@ function check_dir(){
         echo -e "\033[32m 你的安装目录为 $install_dir \033[0m"
         check_dir
     fi
-    #判断目录是否存在
-
 }
 
 #启动配置流程
@@ -37,14 +36,23 @@ function start_config(){
 }
 #安装功能
 function install_docker(){
-    echo "开始安装docker"
-    curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+    #判断是否安装docker
+    if [ ! -x "$(command -v docker)" ]; then
+        echo "未在系统中检测到docker环境"
+        echo "开始安装docker"
+        curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+    fi
+    #检查是否安装完成，未安装完成则退出
+    if [ ! -x "$(command -v docker)" ]; then
+        echo "docker安装失败"
+        exit 1
+    fi
     #选择是否从源码编译singbox输入y则从源码编译
     read -p "是否从源码编译singbox（y/n）：" build_singbox
     if [[ "$build_singbox" =~ ^[Yy]$ ]]; then
         echo "你选择从源码编译singbox"
         cp ./Docker/Dockerfile.net ./Dockerfile
-        elif
+    else
         echo "你选择从本地安装singbox"
         cp ./Docker/Dockerfile.local ./Dockerfile
     fi
@@ -73,6 +81,21 @@ function install_docker(){
         echo "开始安装..."
         echo "清除原有内容"
         ip=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+        #检查ip是否获取成功若失败则手动输入ip
+        if [ ! -n "$ip" ]; then
+            echo "未获取到ip"
+            read -p "请输入你的ip：" ip
+            #检查ip是否符合规范否则重新输入
+
+            if [[ ! "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo -e "\033[31m 你的输入不符合规范，请重新输入 \033[0m"
+                read -p "请输入你的ip：" ip
+                ip=$(echo "$ip" | tr -d '\n')
+                echo -e "\033[32m 你的ip为 $ip \033[0m"
+            fi
+            ip=$(echo "$ip" | tr -d '\n')
+            echo -e "\033[32m 你的ip为 $ip \033[0m"
+        fi
         docker stop $imageName
         docker rm $imageName
         docker rmi $imageName
@@ -95,50 +118,60 @@ function install_docker(){
 }
 
 function install_system(){
-    echo "安装nodejs-18"
-    curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    #判断发行版确定包管理器
-    if [ -f /etc/redhat-release ]; then
-        echo "你的发行版为CentOS"
-        yum install -y nodejs
-    elif [ -f /etc/debian_version ]; then
-        echo "你的发行版为Debian"
-        apt-get install -y nodejs
-    elif [ -f /etc/lsb-release ]; then
-        echo "你的发行版为Ubuntu"
-        apt-get install -y nodejs
-    elif [ -f /etc/arch-release ]; then
-        echo "你的发行版为Arch"
-        pacman -S nodejs
-    elif [ -f /etc/SuSE-release ]; then
-        echo "你的发行版为SuSE"
-        zypper install -y nodejs
-    elif [ -f /etc/alpine-release ]; then
-        echo "你的发行版为Alpine"
-        apk add nodejs
-    else
-        echo "你的发行版为其他"
-        echo "暂不支持你的发行版"
-        exit 1
-    fi
-    #判断系统是否有systemctl
-    if [ -f /bin/systemctl ]; then
-        echo "你的系统支持systemctl"
-        install_systemd
-    else
-        echo "你的系统不支持systemctl"
-        install_systemv
+    #检查是否安装nodejs-18
+    if [ ! -x "$(command -v node)" ]; then
+        echo "未在系统中检测到nodejs-18环境"
+        echo "开始安装nodejs-18"
+        curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        #判断发行版确定包管理器
+        if [ -f /etc/redhat-release ]; then
+            echo "你的发行版为CentOS"
+            yum install -y nodejs
+        elif [ -f /etc/debian_version ]; then
+            echo "你的发行版为Debian"
+            apt-get install -y nodejs
+        elif [ -f /etc/lsb-release ]; then
+            echo "你的发行版为Ubuntu"
+            apt-get install -y nodejs
+        elif [ -f /etc/arch-release ]; then
+            echo "你的发行版为Arch"
+            pacman -S nodejs
+        elif [ -f /etc/SuSE-release ]; then
+            echo "你的发行版为SuSE"
+            zypper install -y nodejs
+        elif [ -f /etc/alpine-release ]; then
+            echo "你的发行版为Alpine"
+            apk add nodejs
+        else
+            echo "你的发行版为其他"
+            echo "暂不支持你的发行版"
+            exit 1
+        fi
     fi
     echo "开始安装..."
     echo "将把singbox安装到系统中"
     echo "安装目录为 /singBox"
-    mkdie /singBox
-    cp -r ./ /singBox
-    wget https://exodusxiaohui.oss-cn-shanghai.aliyuncs.com/singbox/$cpu/singbox -O /singBox/singBox 
+    mkdir -p $install_dir/singBox
+    #对启动脚本的第5行覆写为Environment="ip=$ip"
+    sed -i "5c Environment=\"IP_ADDRESS=$ip\"" ./scripts/singBox.service
+    #对启动脚本的第6行覆写为ExecStart=/usr/bin/node $install_dir/singBox/bundle
+    sed -i "6c ExecStart=/usr/bin/node $install_dir/singBox/bundle" ./scripts/singBox.service
+    #对启动脚本的第7行覆写为WorkingDirectory=$install_dir/singBox
+    sed -i "7c WorkingDirectory=$install_dir/singBox" ./scripts/singBox.service
+    cp -r ./ $install_dir/singBox
+    cp ./bin/$cpu/singBox $install_dir/singBox
+    chmod +x $install_dir/singBox/singBox 
     echo "正在添加singbox为开机启动项"
-    cp ./scripts/singbox.service /etc/systemd/system/
-    systemctl enable singbox
-    systemctl start singbox
+    #判断系统是否有systemctl
+    if [ -f /bin/systemctl ]; then
+        echo "你的系统支持systemctl"
+        cp ./scripts/singBox.service /etc/systemd/system/
+        systemctl enable singBox
+        systemctl start singBox
+    else
+        echo "未检测到systemctl"
+        install_systemv
+    fi
     echo "安装完成 请访问WebUi http://localhost:23333"
 }
 
@@ -148,6 +181,12 @@ function install_system(){
 
 echo -e "\033[32m 欢迎使用由 Puer 是只喵 喵～ 制作,经过yang6world修改的Linux神秘模块 \033[0m"
 echo -e "\033[32m tg地址为 https://t.me/blowh2o/449 \033[0m"
+#检查脚本是否以root权限运行，否则切换到root权限运行
+if [ $UID -ne 0 ]; then
+    echo "请使用root权限运行"
+    su root
+    exit 1
+fi
 echo -e "请输入你的安装目录"
 echo -e "例如 /root/config/singBox"
 read -p "安装目录：" install_dir
@@ -200,7 +239,7 @@ case "$choice" in
   ;;
 2)
   echo "您选择了主机安装"
-  uninstall
+  install_system
   ;;
 3)
   echo "您选择了卸载功能"
