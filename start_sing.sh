@@ -57,19 +57,19 @@ function install_docker(){
         cp ./Docker/Dockerfile.local ./Dockerfile
     fi
     read -p "请选择你要安装的设备是有显示器请输入（y/n）：" screen_exist
+    echo "开始安装..."
+    echo "清除原有内容"
+    docker stop $imageName
+    docker rm $imageName
+    docker rmi $imageName
+    echo "打包镜像"
+    docker build --build-arg cpu=$cpu -t $imageName .
+    if [ $? -ne 0 ]; then
+      echo -e "\033[31m 镜像打包失败，请重试 \033[0m"
+      echo "镜像打包失败，请重试"
+      exit 1
+    fi
     if [[ "$screen_exist" =~ ^[Yy]$ ]]; then
-        echo "开始安装..."
-        echo "清除原有内容"
-        docker stop $imageName
-        docker rm $imageName
-        docker rmi $imageName
-        echo "打包镜像"
-        docker build --build-arg cpu=$cpu -t $imageName .
-        if [ $? -ne 0 ]; then
-          echo -e "\033[31m 镜像打包失败，请重试 \033[0m"
-          echo "镜像打包失败，请重试"
-          exit 1
-        fi
         echo "启动容器"
         docker run -d -it --name=singbox --network=host --privileged=true -u=root -v $install_dir/singBox/Dashboard:/singBox/Dashboard -v $install_dir/singBox/ProxyProviders:/singBox/ProxyProviders -v $install_dir/singBox/RuleProviders:/singBox/RuleProviders -v $install_dir/singBox/src:/singBox/src $imageName
         if [ $? -ne 0 ]; then
@@ -78,40 +78,12 @@ function install_docker(){
         fi
         echo "安装完成 请访问WebUi http://localhost:23333"
     else
-        echo "开始安装..."
-        echo "清除原有内容"
-        ip=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
-        #检查ip是否获取成功若失败则手动输入ip
-        if [ ! -n "$ip" ]; then
-            echo "未获取到ip"
-            read -p "请输入你的ip：" ip
-            #检查ip是否符合规范否则重新输入
-
-            if [[ ! "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                echo -e "\033[31m 你的输入不符合规范，请重新输入 \033[0m"
-                read -p "请输入你的ip：" ip
-                ip=$(echo "$ip" | tr -d '\n')
-                echo -e "\033[32m 你的ip为 $ip \033[0m"
-            fi
-            ip=$(echo "$ip" | tr -d '\n')
-            echo -e "\033[32m 你的ip为 $ip \033[0m"
-        fi
-        docker stop $imageName
-        docker rm $imageName
-        docker rmi $imageName
-        echo "打包镜像"
-        #构建镜像传入cpu架构参数cpu
-        docker build --build-arg cpu=$cpu -t $imageName .
-        if [ $? -ne 0 ]; then
-          echo -e "\033[31m 镜像打包失败，请重试 \033[0m"
-          exit 1
-        fi
         echo "启动容器"
         docker run -d -it --name=singbox --network=host --privileged=true -u=root -e IP_ADDRESS=$ip -v $install_dir/singBox/Dashboard:/singBox/Dashboard -v $install_dir/singBox/ProxyProviders:/singBox/ProxyProviders -v $install_dir/singBox/RuleProviders:/singBox/RuleProviders -v $install_dir/singBox/src:/singBox/src $imageName
-        if [ $? -ne 0 ]; then
-          echo -e "\033[31m 容器启动失败，请重试 \033[0m"
-          exit 1
-        fi
+    if [ $? -ne 0 ]; then
+        echo -e "\033[31m 容器启动失败，请重试 \033[0m"
+        exit 1
+    fi
         echo "安装完成 请访问WebUi http://$ip:23333"
     fi
     
@@ -174,6 +146,43 @@ function install_system(){
     fi
     echo "安装完成 请访问WebUi http://localhost:23333"
 }
+#卸载功能
+function uninstall(){
+    read -p "是否确认卸载（y/n）：" uninstall_confirm
+    if [[ ! "$uninstall_confirm" =~ ^[Yy]$ ]]; then
+        echo "取消卸载"
+        exit 0
+    fi
+    echo "开始卸载..."
+    #检查是否有singbox容器
+    if [ ! -x "$(docker ps -a | grep singbox)" ]; then
+        #检查/etc/systemd/system/下是否有singBox.service
+        if [ ! -f /etc/systemd/system/singBox.service ]; then
+            echo -e "\033[32m 未检测到singBox.service \033[0m"
+            echo -e "\033[32m 卸载完成 \033[0m"
+            exit 0
+        else
+            echo -e "\033[32m 检测到singBox.service \033[0m"
+            echo -e "\033[32m 正在停止singBox.service \033[0m"
+            systemctl stop singBox
+            echo -e "\033[32m 正在删除singBox.service \033[0m"
+            rm /etc/systemd/system/singBox.service
+            echo -e "\033[32m 正在重载systemctl \033[0m"
+            systemctl daemon-reload
+            echo -e "\033[32m 正在重启systemctl \033[0m"
+            systemctl reset-failed
+            echo -e "\033[32m 卸载完成 \033[0m"
+            exit 0
+        fi
+    else
+        echo -e "\033[32m 检测到singbox容器 \033[0m"
+        echo -e "\033[32m 正在停止singbox容器 \033[0m"
+        docker stop singbox
+        echo -e "\033[32m 正在删除singbox容器 \033[0m"
+        docker rm singbox
+        echo -e "\033[32m 卸载完成 \033[0m"
+    fi
+}
 
 
 #将下列echo输出改为绿色
@@ -193,6 +202,21 @@ read -p "安装目录：" install_dir
 install_dir=$(echo "$install_dir" | tr -d '\n')
 echo -e "\033[32m 你的安装目录为 $install_dir \033[0m"
 check_dir
+ip=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+#检查ip是否获取成功若失败则手动输入ip
+if [ ! -n "$ip" ]; then
+        echo "未获取到ip"
+        read -p "请输入你的ip：" ip
+        #检查ip是否符合规范否则重新输入
+        if [[ ! "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo -e "\033[31m 你的输入不符合规范，请重新输入 \033[0m"
+            read -p "请输入你的ip：" ip
+            ip=$(echo "$ip" | tr -d '\n')
+            echo -e "\033[32m 你的ip为 $ip \033[0m"
+        fi
+        ip=$(echo "$ip" | tr -d '\n')
+        echo -e "\033[32m 你的ip为 $ip \033[0m"
+fi
 
 
 
