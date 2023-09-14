@@ -142,9 +142,11 @@ function install_system(){
         systemctl start singBox
     else
         echo "未检测到systemctl"
-        install_systemv
+        cp ./scripts/singBoxinit /etc/init.d/singBox
+        #对12行覆写为APP_DIR="$install_dir/singBox"
+        sed -i "12c APP_DIR=\"$install_dir/singBox\"" /etc/init.d/singBox
     fi
-    echo "安装完成 请访问WebUi http://localhost:23333"
+    echo "安装完成 请访问WebUi http://$ip:23333"
 }
 #卸载功能
 function uninstall(){
@@ -202,21 +204,28 @@ read -p "安装目录：" install_dir
 install_dir=$(echo "$install_dir" | tr -d '\n')
 echo -e "\033[32m 你的安装目录为 $install_dir \033[0m"
 check_dir
-ip=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+#ip=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+ip=$(ifconfig | grep "inet 192.168" | awk '{print $2}')
+#若不存在ifconfig则使用ip addr并删除多余的信息
+if [ ! -n "$ip" ]; then
+    echo -e "\033[31m 获取ip失败 \033[0m"
+    echo -e "\033[32m 尝试重新获取 \033[0m"
+    ip=$(ip addr | grep "inet 192.168" | awk '{print $2}' | awk -F "/" '{print $1}')
+fi
 #检查ip是否获取成功若失败则手动输入ip
 if [ ! -n "$ip" ]; then
-        echo "未获取到ip"
+        echo -e "\033[31m 未获取到ip \033[0m" 
         read -p "请输入你的ip：" ip
         #检查ip是否符合规范否则重新输入
         if [[ ! "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo -e "\033[31m 你的输入不符合规范，请重新输入 \033[0m"
             read -p "请输入你的ip：" ip
             ip=$(echo "$ip" | tr -d '\n')
-            echo -e "\033[32m 你的ip为 $ip \033[0m"
+            echo -e "\033[33m 你的ip为 $ip \033[0m"
         fi
         ip=$(echo "$ip" | tr -d '\n')
-        echo -e "\033[32m 你的ip为 $ip \033[0m"
 fi
+echo -e "\033[33m 你的ip为 $ip \033[0m"
 
 
 

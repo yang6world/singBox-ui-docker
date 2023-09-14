@@ -1,0 +1,49 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          singbox
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start and stop the singbox Node.js app with IP_ADDRESS environment variable
+### END INIT INFO
+
+# Change this to the actual path of your Node.js application
+#查找singBox的安装目录
+install_dir=$(cat /etc/profile | grep singBoxdir | awk -F "\"" '{print $2}')
+[ -z "$install_dir" ] && install_dir=$(cat ~/.bashrc | grep singBoxdir | awk -F "\"" '{print $2}')
+APP_DIR="/root/singbox"
+APP_NAME="bundle"
+NODE_BIN="/usr/bin/node"  # Use the correct path to the node executable
+IP_ADDRESS="YOUR_IP_ADDRESS_HERE"  # Set your IP address here
+
+start() {
+    echo "Starting $APP_NAME with IP_ADDRESS=$IP_ADDRESS..."
+    cd "$APP_DIR"
+    IP_ADDRESS="$IP_ADDRESS" $NODE_BIN "$APP_NAME" &
+}
+
+stop() {
+    echo "Stopping $APP_NAME..."
+    pkill -f "$NODE_BIN $APP_NAME"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        sleep 1
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0
