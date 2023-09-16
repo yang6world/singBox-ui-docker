@@ -283,3 +283,5 @@ case "$choice" in
   exit 0
   ;;
 esac
+chmod +x ./scripts/base_config.sh
+bash ./scripts/base_config.sh
