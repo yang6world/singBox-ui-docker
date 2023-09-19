@@ -274,8 +274,8 @@ else
 fi
 
 # 读取用户输入
-#如果是padavan系统则
-if [ "$systype" = "Padavan" ]; then
+#如果是padavan或小米或华硕或natapp系统则执行
+if [[ "$systype" =~ ^Padavan$|^mi_snapshot$|^asusrouter$|^ng_snapshot$ ]]; then
     echo -e "\033[32m 请选择安装方式 \033[0m"
     echo -e "\033[32m 1.主机安装 \033[0m"
     echo -e "\033[32m 2.卸载 \033[0m"
@@ -301,26 +301,32 @@ if [ "$systype" = "Padavan" ]; then
     chmod +x ./scripts/base_config.sh
     bash ./scripts/base_config.sh
     exit 0
+else
+    case "$choice" in
+    1)
+    echo "您选择了使用Docker安装功能"
+    cp -r ./ $install_dir/singBox
+    install_docker
+    ;;
+    2)
+    echo "您选择了主机安装"
+    install_system
+    ;;
+    3)
+    echo "您选择了卸载功能"
+    uninstall
+    ;;
+    *)
+    echo "谢谢使用！"
+    exit 0
+    ;;
+    esac
 fi
+
+
+
+
 # 根据用户输入执行相应操作
-case "$choice" in
-1)
-  echo "您选择了使用Docker安装功能"
-  cp -r ./ $install_dir/singBox
-  install_docker
-  ;;
-2)
-  echo "您选择了主机安装"
-  install_system
-  ;;
-3)
-  echo "您选择了卸载功能"
-  uninstall
-  ;;
-*)
-  echo "谢谢使用！"
-  exit 0
-  ;;
-esac
+
 chmod +x ./scripts/base_config.sh
 bash ./scripts/base_config.sh
