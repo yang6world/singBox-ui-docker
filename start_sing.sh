@@ -237,6 +237,19 @@ echo -e "\033[32m 1.使用Docker安装 \033[0m"
 echo -e "\033[32m 2.主机安装（可能会遇到未知问题） \033[0m"
 echo -e "\033[32m 3.卸载 \033[0m"
 echo -e "\033[32m 其他任意键退出 \033[0m"
+#特殊固件识别及标记
+#参照shellclash
+[ -f "/etc/storage/started_script.sh" ] && {
+	systype=Padavan #老毛子固件
+	initdir='/etc/storage/started_script.sh'
+	}
+[ -d "/jffs" ] && {
+	systype=asusrouter #华硕固件
+	[ -f "/jffs/.asusrouter" ] && initdir='/jffs/.asusrouter'
+	[ -d "/jffs/scripts" ] && initdir='/jffs/scripts/nat-start' 
+	}
+[ -f "/data/etc/crontabs/root" ] && systype=mi_snapshot #小米设备
+[ -w "/var/mnt/cfg/firewall" ] && systype=ng_snapshot #NETGEAR设备
 #检查主机的cpu架构并保存为变量
 cpu=$(uname -m)
 if [[ "$cpu" =~ ^armv7 ]]; then
@@ -261,8 +274,34 @@ else
 fi
 
 # 读取用户输入
-read choice
-
+#如果是padavan系统则
+if [ "$systype" = "Padavan" ]; then
+    echo -e "\033[32m 请选择安装方式 \033[0m"
+    echo -e "\033[32m 1.主机安装 \033[0m"
+    echo -e "\033[32m 2.卸载 \033[0m"
+    echo -e "\033[32m 其他任意键退出 \033[0m"
+    echo "你的设备为$systype"
+    read -n 1
+    #判断用户输入
+    read choice
+    case "$choice" in
+    1)
+      echo "您选择了主机安装"
+      install_system
+      ;;
+    2)
+      echo "您选择了卸载功能"
+      uninstall
+      ;;
+    *)
+      echo "谢谢使用！"
+      exit 0
+      ;;
+    esac
+    chmod +x ./scripts/base_config.sh
+    bash ./scripts/base_config.sh
+    exit 0
+fi
 # 根据用户输入执行相应操作
 case "$choice" in
 1)
