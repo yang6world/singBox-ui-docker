@@ -281,7 +281,6 @@ if [[ "$systype" =~ ^Padavan$|^mi_snapshot$|^asusrouter$|^ng_snapshot$ ]]; then
     echo -e "\033[32m 2.卸载 \033[0m"
     echo -e "\033[32m 其他任意键退出 \033[0m"
     echo "你的设备为$systype"
-    read -n 1
     #判断用户输入
     read choice
     case "$choice" in
@@ -298,10 +297,8 @@ if [[ "$systype" =~ ^Padavan$|^mi_snapshot$|^asusrouter$|^ng_snapshot$ ]]; then
       exit 0
       ;;
     esac
-    chmod +x ./scripts/base_config.sh
-    bash ./scripts/base_config.sh
-    exit 0
 else
+    read choice
     case "$choice" in
     1)
     echo "您选择了使用Docker安装功能"
@@ -327,6 +324,8 @@ fi
 
 
 # 根据用户输入执行相应操作
+
+
 
 chmod +x ./scripts/base_config.sh
 bash ./scripts/base_config.sh
