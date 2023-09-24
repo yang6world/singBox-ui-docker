@@ -287,6 +287,7 @@ if [[ "$systype" =~ ^Padavan$|^mi_snapshot$|^asusrouter$|^ng_snapshot$ ]]; then
     1)
       echo "您选择了主机安装"
       install_system
+      install_ways="system"
       ;;
     2)
       echo "您选择了卸载功能"
@@ -304,10 +305,12 @@ else
     echo "您选择了使用Docker安装功能"
     cp -r ./ $install_dir/singBox
     install_docker
+    install_ways="docker"
     ;;
     2)
     echo "您选择了主机安装"
     install_system
+    install_ways="system"
     ;;
     3)
     echo "您选择了卸载功能"
