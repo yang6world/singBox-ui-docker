@@ -37,6 +37,7 @@ function start_config(){
 #安装功能
 function install_docker(){
     #判断是否安装docker
+    
     if [ ! -x "$(command -v docker)" ]; then
         echo "未在系统中检测到docker环境"
         echo "开始安装docker"
@@ -148,43 +149,7 @@ function install_system(){
     fi
     echo "安装完成 请访问WebUi http://$ip:23333"
 }
-#卸载功能
-function uninstall(){
-    read -p "是否确认卸载（y/n）：" uninstall_confirm
-    if [[ ! "$uninstall_confirm" =~ ^[Yy]$ ]]; then
-        echo "取消卸载"
-        exit 0
-    fi
-    echo "开始卸载..."
-    #检查是否有singbox容器
-    if [ ! -x "$(docker ps -a | grep singbox)" ]; then
-        #检查/etc/systemd/system/下是否有singBox.service
-        if [ ! -f /etc/systemd/system/singBox.service ]; then
-            echo -e "\033[32m 未检测到singBox.service \033[0m"
-            echo -e "\033[32m 卸载完成 \033[0m"
-            exit 0
-        else
-            echo -e "\033[32m 检测到singBox.service \033[0m"
-            echo -e "\033[32m 正在停止singBox.service \033[0m"
-            systemctl stop singBox
-            echo -e "\033[32m 正在删除singBox.service \033[0m"
-            rm /etc/systemd/system/singBox.service
-            echo -e "\033[32m 正在重载systemctl \033[0m"
-            systemctl daemon-reload
-            echo -e "\033[32m 正在重启systemctl \033[0m"
-            systemctl reset-failed
-            echo -e "\033[32m 卸载完成 \033[0m"
-            exit 0
-        fi
-    else
-        echo -e "\033[32m 检测到singbox容器 \033[0m"
-        echo -e "\033[32m 正在停止singbox容器 \033[0m"
-        docker stop singbox
-        echo -e "\033[32m 正在删除singbox容器 \033[0m"
-        docker rm singbox
-        echo -e "\033[32m 卸载完成 \033[0m"
-    fi
-}
+
 
 
 #将下列echo输出改为绿色
@@ -291,7 +256,8 @@ if [[ "$systype" =~ ^Padavan$|^mi_snapshot$|^asusrouter$|^ng_snapshot$ ]]; then
       ;;
     2)
       echo "您选择了卸载功能"
-      uninstall
+      chmod +x ./scripts/uninstall.sh
+      bash ./scripts/uninstall.sh
       ;;
     *)
       echo "谢谢使用！"
@@ -314,7 +280,8 @@ else
     ;;
     3)
     echo "您选择了卸载功能"
-    uninstall
+    chmod +x ./scripts/uninstall.sh
+    bash ./scripts/uninstall.sh
     ;;
     *)
     echo "谢谢使用！"
@@ -322,13 +289,5 @@ else
     ;;
     esac
 fi
-
-
-
-
-# 根据用户输入执行相应操作
-
-
-
 chmod +x ./scripts/base_config.sh
 bash ./scripts/base_config.sh
