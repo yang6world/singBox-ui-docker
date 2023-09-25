@@ -29,11 +29,6 @@ function check_dir(){
     fi
 }
 
-#启动配置流程
-function start_config(){
-    chmod +x ./scripts/config.sh
-    ./scripts/config.sh
-}
 #安装功能
 function install_docker(){
     #判断是否安装docker
@@ -169,6 +164,7 @@ read -p "安装目录：" install_dir
 install_dir=$(echo "$install_dir" | tr -d '\n')
 echo -e "\033[32m 你的安装目录为 $install_dir \033[0m"
 check_dir
+export install_dir=$(echo "$install_dir" | tr -d '\n')
 #ip=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
 ip=$(ifconfig | grep "inet 192.168" | awk '{print $2}')
 #若不存在ifconfig则使用ip addr并删除多余的信息
@@ -252,7 +248,7 @@ if [[ "$systype" =~ ^Padavan$|^mi_snapshot$|^asusrouter$|^ng_snapshot$ ]]; then
     1)
       echo "您选择了主机安装"
       install_system
-      install_ways="system"
+      export install_ways="system"
       ;;
     2)
       echo "您选择了卸载功能"
@@ -271,12 +267,12 @@ else
     echo "您选择了使用Docker安装功能"
     cp -r ./ $install_dir/singBox
     install_docker
-    install_ways="docker"
+    export install_ways="docker"
     ;;
     2)
     echo "您选择了主机安装"
     install_system
-    install_ways="system"
+    export install_ways="system"
     ;;
     3)
     echo "您选择了卸载功能"

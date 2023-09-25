@@ -1,5 +1,6 @@
 #!/bin/bash
-#
+#获取当前脚本目录
+cur_dir=$(cd "$(dirname "$0")"; pwd)
 echo -e "\033[32m 是否开启开机自启 \033[0m"
 read -p "请输入y/n > " reread
 if [ "$reread" = "y" ];then
@@ -42,7 +43,7 @@ fi
 
 echo -e "\033[32m  \033[0m"
 #将该文件设置的变量存储到config.yaml中
-cat <<EOF > $install_dir/config.yaml
+cat <<EOF > ./config.yaml
 install_ways: $install_ways
 start: $start
 install_dir: $install_dir
