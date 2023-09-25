@@ -1,14 +1,14 @@
 #!/bin/bash
 #读取配置文件
-install_dir=$(cat $install_dir/config.yaml | grep install_dir | awk '{print $2}')
-install_ways=$(cat $install_dir/config.yaml | grep install_ways | awk '{print $2}')
+install_dir=$(cat ./config.yaml | grep install_dir | awk '{print $2}')
+install_ways=$(cat ./config.yaml | grep install_ways | awk '{print $2}')
 read -p "是否确认卸载（y/n）：" uninstall_confirm
 if [[ ! "$uninstall_confirm" =~ ^[Yy]$ ]]; then
     echo "取消卸载"
     exit 0
 fi
 echo "开始卸载..."
-if [ ! "$install_ways" = "dcoker"]; then
+if [ "$install_ways" = "system" ]; then
     #检查/etc/systemd/system/下是否有singBox.service
     if [ ! -f /etc/systemd/system/singBox.service ]; then
         echo -e "\033[32m 未检测到singBox.service \033[0m"

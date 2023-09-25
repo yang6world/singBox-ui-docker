@@ -43,7 +43,7 @@ fi
 
 echo -e "\033[32m  \033[0m"
 #将该文件设置的变量存储到config.yaml中
-cat <<EOF > ./config.yaml
+cat <<EOF > $install_dir/singBox/scripts/config.yaml
 install_ways: $install_ways
 start: $start
 install_dir: $install_dir
