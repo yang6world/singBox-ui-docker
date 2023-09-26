@@ -1,6 +1,9 @@
 #!/bin/bash
 #获取当前脚本目录
 cur_dir=$(cd "$(dirname "$0")"; pwd)
+fackip="关闭"
+quic_rj="关闭"
+
 echo -e "\033[32m 是否开启开机自启 \033[0m"
 read -p "请输入y/n > " reread
 if [ "$reread" = "y" ];then
@@ -50,5 +53,6 @@ install_dir: $install_dir
 ipv6: $ipv6
 proxy_mode: $proxy_mode
 dns_mode: $dns_mode
+fake_ip: $fake_ip
 
 EOF

@@ -81,4 +81,13 @@ singbox_run(){
 	fi
 
 }
+proxy_config(){
+	echo -----------------------------------------------
+	echo "设置代理方式"
+	echo -----------------------------------------------
+	echo -e " 1 \033[32m代理模式：$proxy_mode模式\033[0m"
+	echo -e " 2 \033[32mFakeIP开关：$fackip\033[0m"
+	echo -e " 3 \033[32m\033[0m"
+
+}
 singbox_run
