@@ -3,6 +3,8 @@ Description=singBox
 
 [Service]
 Environment="ip="
+ExecStartPre=/bin/mkdir -p /tmp/singBox
+ExecStartPre=/bin/echo `date +%s` > /tmp/singBox/singbox_start_time
 ExecStart=/usr/bin/node /root/config/singBox/bundle
 WorkingDirectory=/root/config/singBox
 Restart=always

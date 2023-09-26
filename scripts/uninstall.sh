@@ -1,7 +1,7 @@
 #!/bin/bash
 #读取配置文件
-install_dir=$(cat ./config.yaml | grep install_dir | awk '{print $2}')
-install_ways=$(cat ./config.yaml | grep install_ways | awk '{print $2}')
+install_dir=$(cat /etc/singBox/config.yaml | grep install_dir | awk '{print $2}')
+install_ways=$(cat /etc/singBox/config.yaml | grep install_ways | awk '{print $2}')
 read -p "是否确认卸载（y/n）：" uninstall_confirm
 if [[ ! "$uninstall_confirm" =~ ^[Yy]$ ]]; then
     echo "取消卸载"
@@ -25,7 +25,6 @@ if [ "$install_ways" = "system" ]; then
         echo -e "\033[32m 正在重启systemctl \033[0m"
         systemctl reset-failed
         echo -e "\033[32m 卸载完成 \033[0m"
-        exit 0
     fi
 else
     echo -e "\033[32m 检测到singbox容器 \033[0m"
@@ -35,3 +34,6 @@ else
     docker rm singbox
     echo -e "\033[32m 卸载完成 \033[0m"
 fi
+rm /usr/local/bin/singbox
+rm -rf /etc/singBox
+rm -rf $install_dir

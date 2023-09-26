@@ -122,10 +122,10 @@ function install_system(){
     mkdir -p $install_dir/singBox
     #对启动脚本的第5行覆写为Environment="ip=$ip"
     sed -i "5c Environment=\"IP_ADDRESS=$ip\"" ./scripts/singBox.service
-    #对启动脚本的第6行覆写为ExecStart=/usr/bin/node $install_dir/singBox/bundle
-    sed -i "6c ExecStart=/usr/bin/node $install_dir/singBox/bundle" ./scripts/singBox.service
-    #对启动脚本的第7行覆写为WorkingDirectory=$install_dir/singBox
-    sed -i "7c WorkingDirectory=$install_dir/singBox" ./scripts/singBox.service
+    #对启动脚本的第8行覆写为ExecStart=/usr/bin/node $install_dir/singBox/bundle
+    sed -i "8c ExecStart=/usr/bin/node $install_dir/singBox/bundle" ./scripts/singBox.service
+    #对启动脚本的第9行覆写为WorkingDirectory=$install_dir/singBox
+    sed -i "9c WorkingDirectory=$install_dir/singBox" ./scripts/singBox.service
     cp -r ./ $install_dir/singBox
     cp ./bin/$cpu/singBox $install_dir/singBox
     chmod +x $install_dir/singBox/singBox 
@@ -285,5 +285,9 @@ else
     ;;
     esac
 fi
+
+ln -s $install_dir/singBox/scripts/singbox.sh /usr/local/bin/singbox
+chmod +x /usr/local/bin/singbox
+mkdir /etc/singBox
 chmod +x ./scripts/base_config.sh
 bash ./scripts/base_config.sh

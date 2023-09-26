@@ -35,15 +35,15 @@ if [ "$dns_mode1" = "y" ];then
 else
     dns_mode="关闭"
 fi
-echo -e "\033[32m 是否现在启动singbox \033[0m"
+echo -e "\033[32m 是否现在重启singbox神秘面板 \033[0m"
 read -p "请输入y/n > " singbox1
 if [ "$singbox1" = "y" ];then
-    
+    systemctl restart singBox
 fi
 
 echo -e "\033[32m  \033[0m"
 #将该文件设置的变量存储到config.yaml中
-cat <<EOF > $install_dir/singBox/scripts/config.yaml
+cat <<EOF > /etc/singBox/config.yaml
 install_ways: $install_ways
 start: $start
 install_dir: $install_dir
