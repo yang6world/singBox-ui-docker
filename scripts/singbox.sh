@@ -7,6 +7,35 @@ ipv6=$(cat /etc/singBox/config.yaml | grep ipv6 | awk '{print $2}')
 proxy_mode=$(cat /etc/singBox/config.yaml | grep proxy_mode | awk '{print $2}')
 dns_mode=$(cat /etc/singBox/config.yaml | grep dns_mode | awk '{print $2}')
 
+modify_yaml_key() {
+  local yaml_file="$1"
+  local key_to_modify="$2"
+  local new_value="$3"
+
+  # 检查是否存在要修改的键
+  if [[ -f "$yaml_file" ]]; then
+    yaml_content=$(<"$yaml_file")
+
+    if [[ $yaml_content == *"$key_to_modify:"* ]]; then
+      # 使用正则表达式来查找要修改的键的行
+      key_line=$(echo "$yaml_content" | grep -n "$key_to_modify:" | cut -d: -f1)
+      # 计算缩进级别
+      indent=$(echo "${yaml_content}" | sed -n "${key_line}p" | awk -F"$key_to_modify:" '{print $1}')
+      # 替换键对应的值
+      new_line="${indent}${key_to_modify}: $new_value"
+      updated_yaml_content=$(echo "$yaml_content" | sed "${key_line}s/.*/$new_line/")
+      # 保存更新后的内容回文件
+      echo "$updated_yaml_content" > "$yaml_file"
+
+      echo "配置已更新"
+    else
+      echo "未找到要修改的键: $key_to_modify"
+    fi
+  else
+    echo "YAML 文件不存在: $yaml_file"
+  fi
+}
+
 check_status(){
 	if [ "$start" = "开启" ]; then
 		auto="\033[32m已设置开机启动！\033[0m"
@@ -88,6 +117,8 @@ proxy_config(){
 	echo -e " 1 \033[32m代理模式：$proxy_mode模式\033[0m"
 	echo -e " 2 \033[32mFakeIP开关：$fackip\033[0m"
 	echo -e " 3 \033[32m\033[0m"
+	read num1
+	
 
 }
 singbox_run
